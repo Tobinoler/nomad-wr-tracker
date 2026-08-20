@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
-from typing import Any
+from typing import Any, Iterable
 
 import pandas as pd
 
-from .config import CATEGORY_ORDER, TIERS
+from .config import CATEGORY_ORDER, POSITIONS, TIERS
+
+POSITION_SEP = " / "
 
 
 # --------------------------------------------------------------------------
@@ -60,6 +62,37 @@ def metric_choices(metrics: pd.DataFrame) -> dict[str, dict[str, str]]:
 def athlete_choices(athletes: pd.DataFrame, include_inactive: bool = False) -> dict[str, str]:
     df = athletes if include_inactive else athletes[athletes["active"]]
     return {r["athlete_id"]: athlete_label(dict(r)) for _, r in df.iterrows()}
+
+
+# --------------------------------------------------------------------------
+# Positions — stored as one free-text string, edited as a primary + a second
+# --------------------------------------------------------------------------
+
+
+def split_position(position: str) -> tuple[str, str]:
+    """'RHP / 1B-OF' -> ('RHP', '1B-OF'). Splits once, so extra parts survive."""
+    primary, _, secondary = str(position or "").partition("/")
+    return primary.strip(), secondary.strip()
+
+
+def join_position(primary: str, secondary: str) -> str:
+    return POSITION_SEP.join(p for p in (str(primary).strip(), str(secondary).strip()) if p)
+
+
+def position_choices(athletes: pd.DataFrame, extra: Iterable[str] = ()) -> dict[str, str]:
+    """The standard list, plus whatever is already in use (and anything passed in).
+
+    `extra` carries the values loaded into a form, so a position typed straight
+    into athletes.csv survives an edit-and-save round trip instead of silently
+    resetting to blank.
+    """
+    known: set[str] = set()
+    for value in athletes["position"].dropna().tolist():
+        primary, secondary = split_position(value)
+        known.update(p for p in (primary, secondary) if p)
+    known.update(p.strip() for p in extra if p and p.strip())
+    ordered = POSITIONS + sorted(p for p in known if p not in POSITIONS)
+    return {"": "—", **{p: p for p in ordered}}
 
 
 # --------------------------------------------------------------------------

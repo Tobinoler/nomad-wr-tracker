@@ -25,6 +25,20 @@ METRIC_PLACEHOLDER = "— Choose lift / metric —"
 STEP_BY_UNIT = {"sec": 0.01, "mph": 0.1, "%": 0.1, "in": 0.5, "cm": 0.5, "kg": 0.5, "lbs": 5.0}
 
 
+def _parse_grad(text: Any) -> int | None:
+    """Grad year from the self-signup box. Blank is fine; nonsense is not."""
+    text = str(text or "").strip()
+    if not text:
+        return None
+    try:
+        year = int(float(text))
+    except ValueError:
+        raise storage.StorageError("Grad year should be a number like 2027.") from None
+    if not 1900 <= year <= 2100:
+        raise storage.StorageError("That grad year doesn't look right.")
+    return year
+
+
 @module.ui
 def quick_entry_ui(athletes: pd.DataFrame, metrics: pd.DataFrame) -> TagList:
     return TagList(
@@ -41,6 +55,8 @@ def quick_entry_ui(athletes: pd.DataFrame, metrics: pd.DataFrame) -> TagList:
                     width="100%",
                     options={"placeholder": ATHLETE_PLACEHOLDER},
                 ),
+                ui.output_ui("add_me"),
+                ui.output_ui("add_me_msg"),
                 ui.input_select(
                     "metric",
                     "Lift / Metric",
@@ -68,6 +84,8 @@ def quick_entry_ui(athletes: pd.DataFrame, metrics: pd.DataFrame) -> TagList:
 def quick_entry_server(input, output, session) -> None:
     result: reactive.Value[dict[str, Any] | None] = reactive.value(None)
     reset_token: reactive.Value[int] = reactive.value(0)
+    show_add: reactive.Value[bool] = reactive.value(False)
+    add_msg: reactive.Value[tuple[str, str] | None] = reactive.value(None)
 
     # -- keep the two pickers in sync with the catalogue files ---------------
 
@@ -87,6 +105,103 @@ def quick_entry_server(input, output, session) -> None:
             current = input.metric() or ""
         valid = {mid for group in choices.values() for mid in (group if isinstance(group, dict) else {})}
         ui.update_select("metric", choices=choices, selected=current if current in valid else "")
+
+    # -- self-signup ---------------------------------------------------------
+    # Athletes can put themselves on the roster from here, so nobody needs to be
+    # sent to the Admin page — where the same tap could edit the metric
+    # catalogue and change PR detection for the whole team.
+
+    @reactive.effect
+    @reactive.event(input.open_add)
+    def _open_add() -> None:
+        add_msg.set(None)
+        show_add.set(True)
+
+    @reactive.effect
+    @reactive.event(input.cancel_add)
+    def _cancel_add() -> None:
+        add_msg.set(None)
+        show_add.set(False)
+
+    @reactive.effect
+    @reactive.event(input.add_submit)
+    def _add_me() -> None:
+        try:
+            athlete_id, created = storage.add_athlete_if_new(
+                name=input.add_name(),
+                grad_year=_parse_grad(input.add_grad()),
+                position=logic.join_position(input.add_pos1() or "", input.add_pos2() or ""),
+            )
+        except storage.StorageError as exc:
+            add_msg.set(("error", str(exc)))
+            return
+        except Exception as exc:  # a failed signup must never take down the kiosk
+            log.exception("Self-signup failed")
+            add_msg.set(("error", f"Could not add you: {exc}"))
+            return
+
+        # Fresh from disk, not the polled frame: the poll can be up to a second
+        # behind the write, and the browser can't select an option it lacks.
+        roster = storage.load_athletes()
+        name = str(logic.athlete_map(roster).get(athlete_id, {}).get("name", "You"))
+        ui.update_selectize(
+            "athlete",
+            choices={"": ATHLETE_PLACEHOLDER, **logic.athlete_choices(roster)},
+            selected=athlete_id,
+        )
+        show_add.set(False)
+        add_msg.set(
+            ("success", f"You're on the roster, {name} — and selected below. Log away.")
+            if created
+            else ("info", f"{name} was already on the roster — selected below.")
+        )
+
+    @render.ui
+    def add_me() -> TagChild:
+        expanded = show_add()
+        # Isolated: another athlete signing up mid-keystroke must not re-render
+        # this form and wipe what's been typed into it.
+        with reactive.isolate():
+            roster = data.athletes()
+        roster_empty = roster.empty
+        expanded = expanded or roster_empty
+
+        if not expanded:
+            return ui.tags.div(
+                {"class": "add-me-row"},
+                ui.tags.span("Not on the list?", class_="add-me-prompt"),
+                ui.input_action_button("open_add", "+ Add me", class_="btn-addme"),
+            )
+
+        positions = logic.position_choices(roster)
+        return ui.tags.div(
+            {"class": "add-me-form"},
+            ui.tags.div(
+                "No one on the roster yet — add yourself"
+                if roster_empty
+                else "Add yourself to the roster",
+                class_="add-me-title",
+            ),
+            ui.input_text("add_name", "Your name", placeholder="First Last", width="100%"),
+            ui.tags.div(
+                {"class": "filter-row"},
+                ui.input_text("add_grad", "Grad year", placeholder="2027"),
+                ui.input_select("add_pos1", "Position", choices=positions),
+                ui.input_select("add_pos2", "Second position", choices=positions),
+            ),
+            ui.tags.div(
+                {"class": "btn-row"},
+                ui.input_action_button("add_submit", "Add me", class_="btn-admin"),
+                None
+                if roster_empty
+                else ui.input_action_button("cancel_add", "Cancel", class_="btn-admin btn-quiet"),
+            ),
+        )
+
+    @render.ui
+    def add_me_msg() -> TagChild:
+        msg = add_msg()
+        return None if msg is None else alert(msg[1], tone=msg[0])
 
     # -- current selections --------------------------------------------------
 

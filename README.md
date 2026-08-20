@@ -13,7 +13,7 @@ flat CSVs you can open in Excel, edit by hand, and back up by copying a folder.
 
 | Page | Who uses it | What it does |
 | --- | --- | --- |
-| **Quick Entry** | Athletes, mid-session | Pick athlete → pick lift → see their last value and PR → type the number → Save. Beats their PR? Gold celebration banner. |
+| **Quick Entry** | Athletes, mid-session | Pick athlete → pick lift → see their last value and PR → type the number → Save. Beats their PR? Gold celebration banner. New athletes add themselves here. |
 | **Athlete** | Athlete or coach | Every metric they've logged: PR, latest, change since first entry, a trend chart per metric, and the full entry log with PRs flagged. |
 | **Team** | Coach | Leaderboard per metric across the active roster, filterable by class, with optional Elite/Advanced/Average/Below-Average tiers. |
 | **Admin** | Coach | Add/edit/deactivate athletes, add/edit metrics, set benchmark cutoffs. |
@@ -44,16 +44,24 @@ athletes, results or standards.
 
 ### Adding athletes
 
-Admin → **Athletes** → "+ New athlete": name, grad year, up to two positions
-(saved combined, e.g. `RHP / OF`), Active on. They appear in Quick Entry
-immediately — every connected phone picks up the change within a second, no
-refresh needed.
+**Athletes add themselves from Quick Entry.** Under the athlete picker there's a
+quiet "Not on the list? **+ Add me**" — it opens a small form (name, grad year,
+up to two positions) and nothing else. Submitting puts them on the roster *and
+selects them*, so the next tap is their first lift. That's the whole reason it
+exists: nobody needs to be sent to the Admin page, where the same tap could edit
+the metric catalogue and change PR detection for the entire team.
 
-Athletes can add themselves the same way, since the app has no login: anyone on
-the gym Wi-Fi can reach the Admin page. Worth knowing that page also edits the
-metric catalogue, and flipping a metric's `higher_is_better` changes PR
-detection for the whole team — so it's worth telling them to fill in their own
-name and leave the rest alone.
+Tapping "Add me" with a name already on the roster does **not** create a second
+row — it selects the athlete who's already there and says so. The name check and
+the write happen inside one lock, so two people signing up at the same instant
+can't both win, and matching ignores case and stray spaces (`  mike  ` finds
+`Mike`). What it can't catch is the same athlete entering a genuinely different
+name (`Jack S` vs `Jack Snakenberg`); those are two people as far as the app is
+concerned, and a coach merges them by editing `athletes.csv`.
+
+Coaches can still do all of it from Admin → **Athletes**, which additionally
+allows editing and deactivating. New athletes appear on every connected phone
+within a second, no refresh needed.
 
 `shiny run --host 0.0.0.0 --port 8000 app.py` does the same thing; add
 `--reload` while you're editing code.
@@ -262,6 +270,18 @@ Python: the manifest asks for **3.11** (see `.python-version`). If your Connect
 server doesn't have 3.11 installed, change `python.version` in `manifest.json`
 to one it does — the code is verified clean on 3.9 through 3.14.
 
+**If you add a new file** (a new page module, say), regenerate the manifest —
+Connect bundles the files it lists, so an unlisted file simply won't deploy:
+
+```bash
+rsconnect write-manifest shiny . --entrypoint app:app --overwrite \
+  --exclude data --exclude tests --exclude "**/__pycache__" --exclude "*.pyc"
+```
+
+That rewrites `python.version` to whatever Python you ran it with, so set it
+back to 3.11 (or your server's version) afterwards. Editing existing files
+doesn't need this.
+
 The push-based route works too, if you'd rather not wire up git:
 
 ```bash
@@ -316,8 +336,9 @@ on a gym network with no internet.
 
 ## Known limits
 
-- **No login.** Anyone on the network can log an entry or edit the roster. Fine
-  for a kiosk on a private Wi-Fi; not fine on the open internet.
+- **No login.** Anyone on the network can log an entry, add themselves, or reach
+  Admin and edit the roster and metrics. Fine for a kiosk on a private Wi-Fi;
+  not fine on the open internet. (Posit Connect puts real auth in front of it.)
 - **No entry editing or deletion in the UI.** The log is append-only by design.
   A fat-fingered value is flagged at save time ("that's far off their usual
   numbers") but still recorded. To fix one: stop the app and delete the row from

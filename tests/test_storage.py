@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT))
 
 from nomad_wr import logic, storage  # noqa: E402
 from nomad_wr.config import ATHLETES_CSV, BENCHMARKS_CSV, ENTRIES_CSV, METRICS_CSV  # noqa: E402
-from nomad_wr.pages.admin import _join_position, _split_position  # noqa: E402
+from nomad_wr.logic import join_position, split_position  # noqa: E402
 
 storage.ensure_data_files()
 
@@ -135,16 +135,53 @@ def test_benchmarks_round_trip_and_clear() -> None:
 
 
 def test_position_pairs_round_trip() -> None:
-    assert _join_position("RHP", "OF") == "RHP / OF"
-    assert _join_position("SS", "") == "SS"
-    assert _join_position("", "") == ""
-    assert _split_position("RHP / OF") == ("RHP", "OF")
-    assert _split_position("SS") == ("SS", "")
-    assert _split_position("") == ("", "")
+    assert join_position("RHP", "OF") == "RHP / OF"
+    assert join_position("SS", "") == "SS"
+    assert join_position("", "") == ""
+    assert split_position("RHP / OF") == ("RHP", "OF")
+    assert split_position("SS") == ("SS", "")
+    assert split_position("") == ("", "")
     # A hand-typed three-way splits once, so nothing is dropped on a re-save.
-    assert _split_position("RHP / 1B / OF") == ("RHP", "1B / OF")
+    assert split_position("RHP / 1B / OF") == ("RHP", "1B / OF")
     for original in ("RHP / OF", "SS", "", "CIF / 3B"):
-        assert _join_position(*_split_position(original)) == original
+        assert join_position(*split_position(original)) == original
+
+
+def test_self_signup_never_creates_a_twin() -> None:
+    first_id, created = storage.add_athlete_if_new("Linkyn Fuller", 2027, "RHP / OF")
+    assert created is True
+
+    # The same athlete tapping "Add me" again gets themselves back, not a twin.
+    again_id, created_again = storage.add_athlete_if_new("Linkyn Fuller", 2027, "RHP / OF")
+    assert (again_id, created_again) == (first_id, False)
+
+    # Match on the name as typed, whatever the case or the spacing.
+    sloppy_id, sloppy_created = storage.add_athlete_if_new("  linkyn   FULLER ")
+    assert (sloppy_id, sloppy_created) == (first_id, False)
+
+    roster = storage.load_athletes()
+    assert len(roster[roster["name"] == "Linkyn Fuller"]) == 1
+    saved = roster[roster["athlete_id"] == first_id].iloc[0]
+    assert saved["position"] == "RHP / OF" and bool(saved["active"]) is True
+
+    # A different athlete with a different name still gets in.
+    other_id, other_created = storage.add_athlete_if_new("Blake Lyle", 2029, "LHP")
+    assert other_created is True and other_id != first_id
+
+    # None must not become a row named "None" — str(None) is a truthy string.
+    savers = (
+        ("add_athlete_if_new", lambda v: storage.add_athlete_if_new(v)),
+        ("save_athlete", lambda v: storage.save_athlete(v, None, "", True)),
+        ("save_metric", lambda v: storage.save_metric(v, "Strength", "lbs", True)),
+    )
+    for blank in ("", "   ", None, float("nan")):
+        for label, save in savers:
+            try:
+                save(blank)
+            except storage.StorageError:
+                pass
+            else:
+                raise AssertionError(f"{label} accepted a blank name ({blank!r})")
 
 
 def test_pr_direction_respects_higher_is_better() -> None:

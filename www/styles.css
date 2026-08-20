@@ -396,6 +396,59 @@ body {
   flex-wrap: wrap;
 }
 
+/* ------------------------------------------------------------- self-signup */
+
+.add-me-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: -0.3rem 0 0.8rem;
+}
+
+.add-me-prompt {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.btn-addme {
+  background: transparent;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  color: var(--navy);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.4rem 0.85rem;
+  min-height: 2.4rem; /* still a real tap target, just a quiet one */
+}
+
+.btn-addme:hover,
+.btn-addme:focus {
+  background: var(--surface-2);
+  border-color: var(--navy-300);
+  color: var(--navy);
+}
+
+.add-me-form {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.85rem;
+  margin: 0 0 0.85rem;
+}
+
+.add-me-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 0.6rem;
+}
+
+.add-me-form .form-control,
+.add-me-form .form-select {
+  background-color: #fff;
+}
+
 /* ---------------------------------------------------------------- tiles */
 
 .tile-row {

@@ -137,6 +137,17 @@ def to_bool(value: Any, default: bool = True) -> bool:
     return default
 
 
+def clean_name(value: Any) -> str:
+    """Collapse whitespace to a single space.
+
+    None and NaN become "" rather than the string "None", so they fail the
+    empty-name check instead of putting an athlete called None on the roster.
+    """
+    if value is None or (isinstance(value, float) and math.isnan(value)):
+        return ""
+    return " ".join(str(value).split())
+
+
 def clean_note(note: Any) -> str:
     text = "" if note is None else str(note)
     text = " ".join(text.split())  # collapse newlines/tabs so a row stays a row
@@ -512,7 +523,7 @@ def save_athlete(
     athlete_id: str | None = None,
 ) -> str:
     """Create or update one athlete. Returns the athlete_id."""
-    name = " ".join(str(name).split())
+    name = clean_name(name)
     if not name:
         raise StorageError("An athlete needs a name.")
     try:
@@ -542,6 +553,38 @@ def save_athlete(
         raise StorageError(f"Could not save the athlete: {exc}") from exc
 
 
+def add_athlete_if_new(
+    name: str,
+    grad_year: int | None = None,
+    position: str = "",
+) -> tuple[str, bool]:
+    """Self-signup: create an athlete unless that name is already on the roster.
+
+    Returns ``(athlete_id, created)`` — when ``created`` is False the id belongs
+    to the athlete who was already there, so the caller can just select them.
+
+    The name check and the write share one lock acquisition. Two athletes on two
+    phones tapping "Add me" in the same second therefore can't both create a row,
+    and an athlete who taps twice gets themselves back rather than a twin.
+    """
+    name = clean_name(name)
+    if not name:
+        raise StorageError("Enter a name first.")
+    if len(name) > 80:
+        raise StorageError("That name is too long.")
+
+    try:
+        with data_lock():
+            roster = load_athletes()
+            if not roster.empty:
+                existing = roster[roster["name"].str.casefold() == name.casefold()]
+                if not existing.empty:
+                    return str(existing.iloc[0]["athlete_id"]), False
+            return save_athlete(name, grad_year, position, True), True
+    except Timeout as exc:
+        raise _busy(exc) from exc
+
+
 def set_athlete_active(athlete_id: str, active: bool) -> None:
     try:
         with data_lock():
@@ -562,7 +605,7 @@ def save_metric(
     metric_id: str | None = None,
 ) -> str:
     """Create or update one metric. Returns the metric_id."""
-    name = " ".join(str(name).split())
+    name = clean_name(name)
     if not name:
         raise StorageError("A metric needs a name.")
     try:

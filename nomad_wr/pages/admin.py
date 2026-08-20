@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterable
+from typing import Any
 
 import pandas as pd
 from htmltools import TagChild, TagList
 from shiny import module, reactive, render, ui
 
 from .. import data, logic, storage
-from ..config import CATEGORIES, DATA_DIR, POSITIONS, UNITS
+from ..config import CATEGORIES, DATA_DIR, UNITS
 from ..ui_helpers import alert, data_table, empty_state, page_heading, pill
 
 log = logging.getLogger("nomad_wr.admin")
@@ -27,35 +27,6 @@ def _athlete_pick_choices(athletes: pd.DataFrame) -> dict[str, str]:
 
 def _metric_pick_choices(metrics: pd.DataFrame) -> dict[str, str]:
     return {NEW: "+ New metric", **{r["metric_id"]: r["name"] for _, r in metrics.iterrows()}}
-
-
-POSITION_SEP = " / "
-
-
-def _split_position(position: str) -> tuple[str, str]:
-    """'RHP / 1B-OF' -> ('RHP', '1B-OF'). Splits once, so extra parts survive."""
-    primary, _, secondary = str(position or "").partition("/")
-    return primary.strip(), secondary.strip()
-
-
-def _join_position(primary: str, secondary: str) -> str:
-    return POSITION_SEP.join(p for p in (primary.strip(), secondary.strip()) if p)
-
-
-def _position_choices(athletes: pd.DataFrame, extra: Iterable[str] = ()) -> dict[str, str]:
-    """The standard list, plus whatever is already in use (and anything passed in).
-
-    `extra` carries the values loaded into the form, so a position typed
-    straight into athletes.csv survives an edit-and-save round trip instead of
-    silently resetting to blank.
-    """
-    known: set[str] = set()
-    for value in athletes["position"].dropna().tolist():
-        primary, secondary = _split_position(value)
-        known.update(p for p in (primary, secondary) if p)
-    known.update(p.strip() for p in extra if p and p.strip())
-    ordered = POSITIONS + sorted(p for p in known if p not in POSITIONS)
-    return {"": "—", **{p: p for p in ordered}}
 
 
 def _parse_optional_float(text: Any) -> float | None:
@@ -94,10 +65,10 @@ def admin_ui(athletes: pd.DataFrame, metrics: pd.DataFrame) -> TagList:
                     {"class": "filter-row"},
                     ui.input_text("athlete_grad", "Grad year", placeholder="2027"),
                     ui.input_select(
-                        "athlete_pos1", "Position", choices=_position_choices(athletes)
+                        "athlete_pos1", "Position", choices=logic.position_choices(athletes)
                     ),
                     ui.input_select(
-                        "athlete_pos2", "Second position", choices=_position_choices(athletes)
+                        "athlete_pos2", "Second position", choices=logic.position_choices(athletes)
                     ),
                     ui.input_switch("athlete_active", "Active", value=True),
                 ),
@@ -188,7 +159,7 @@ def admin_server(input, output, session) -> None:
         ui.update_select(
             "athlete_pick", choices=choices, selected=current if current in choices else NEW
         )
-        positions = _position_choices(athletes)
+        positions = logic.position_choices(athletes)
         with reactive.isolate():
             ui.update_select("athlete_pos1", choices=positions, selected=input.athlete_pos1())
             ui.update_select("athlete_pos2", choices=positions, selected=input.athlete_pos2())
@@ -209,8 +180,8 @@ def admin_server(input, output, session) -> None:
             ui.update_switch("athlete_active", value=True)
             return
         grad = athlete.get("grad_year")
-        primary, secondary = _split_position(athlete.get("position") or "")
-        positions = _position_choices(roster, extra=(primary, secondary))
+        primary, secondary = logic.split_position(athlete.get("position") or "")
+        positions = logic.position_choices(roster, extra=(primary, secondary))
         ui.update_text("athlete_name", value=str(athlete["name"]))
         ui.update_text("athlete_grad", value="" if pd.isna(grad) else str(int(grad)))
         ui.update_select("athlete_pos1", choices=positions, selected=primary)
@@ -225,7 +196,7 @@ def admin_server(input, output, session) -> None:
             athlete_id = storage.save_athlete(
                 name=input.athlete_name(),
                 grad_year=grad,
-                position=_join_position(input.athlete_pos1() or "", input.athlete_pos2() or ""),
+                position=logic.join_position(input.athlete_pos1() or "", input.athlete_pos2() or ""),
                 active=bool(input.athlete_active()),
                 athlete_id=input.athlete_pick() or None,
             )
