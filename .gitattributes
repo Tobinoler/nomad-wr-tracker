@@ -1,0 +1,7 @@
+# The app writes LF and it deploys to Linux, so keep LF everywhere — including
+# the working copy on Windows. Otherwise every appended entry lands in a CSV
+# that was checked out with CRLF and the file ends up with mixed endings.
+* text=auto eol=lf
+
+# Vendored, minified: don't convert it and don't try to diff it.
+www/plotly.min.js -text -diff linguist-vendored

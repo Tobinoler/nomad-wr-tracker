@@ -1,0 +1,11 @@
+metric_id,name,category,unit,higher_is_better
+back_squat,Back Squat,Strength,lbs,true
+front_squat,Front Squat,Strength,lbs,true
+trap_bar_deadlift,Trap Bar Deadlift,Strength,lbs,true
+bench_press,Bench Press,Strength,lbs,true
+weighted_chin_up,Weighted Chin-Up,Strength,lbs,true
+vertical_jump,Vertical Jump,Jump,in,true
+broad_jump,Broad Jump,Jump,in,true
+flying_10_sprint,Flying 10 Sprint,Speed,sec,false
+overhead_med_ball_throw,Overhead Med Ball Throw,Power,mph,true
+body_weight,Body Weight,Other,lbs,true

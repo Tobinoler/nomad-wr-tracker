@@ -1,0 +1,8 @@
+# Nomad WR Tracker
+# Runs on Python 3.9 - 3.14 (verified: no 3.10+ syntax, PEP 604 annotations are
+# all behind `from __future__ import annotations`). See .python-version for the
+# version Posit Connect is asked for.
+shiny>=1.0
+pandas>=2.1
+plotly>=5.18
+filelock>=3.12

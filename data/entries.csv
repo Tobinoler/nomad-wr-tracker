@@ -1,0 +1,5 @@
+entry_id,timestamp,athlete_id,metric_id,value,notes
+ent_47a138f7dab5,2026-08-19T15:52:27,ath_d8112bfea9bb,vertical_jump,30,
+ent_c953181a6085,2026-08-19T15:53:34,ath_d8112bfea9bb,vertical_jump,32,
+ent_0101d1141331,2026-08-19T15:54:53,ath_869dab601700,back_squat,405,
+ent_220385307ead,2026-08-19T15:55:05,ath_869dab601700,vertical_jump,20,

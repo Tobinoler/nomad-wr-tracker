@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.DS_Store
+
+# NOTE: www/plotly.min.js IS tracked. The app can normally stage it out of the
+# installed plotly package at startup, but a hosted bundle directory may be
+# read-only — committing it guarantees charts render there as well as offline
+# in the gym.
+
+# Lock and half-written temp files from the CSV store.
+data/.nomad_wr.lock
+data/.*.tmp
+data/*.tmp
+
+# The CSVs ARE tracked, so the roster and the log are versioned and backed up
+# by every push. Note this puts athlete names in git history; if that ever needs
+# undoing it means rewriting history (git filter-repo), not just a later commit.
+# To stop tracking them from here on: uncomment below, then
+#   git rm --cached data/athletes.csv data/entries.csv data/benchmarks.csv
+# data/athletes.csv
+# data/entries.csv
+# data/benchmarks.csv

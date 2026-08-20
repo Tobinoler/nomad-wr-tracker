@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "locale": "English_United States.1252",
+  "metadata": {
+    "appmode": "python-shiny",
+    "entrypoint": "app:app"
+  },
+  "python": {
+    "version": "3.11",
+    "package_manager": {
+      "name": "pip",
+      "version": "26.0.1",
+      "package_file": "requirements.txt"
+    }
+  },
+  "environment": {
+    "python": {
+      "requires": "~=3.11.0"
+    }
+  },
+  "files": {
+    "requirements.txt": {
+      "checksum": "03ac80569b4a8a1ca92a626fe8fbdd3b"
+    },
+    ".gitignore": {
+      "checksum": "498b9832e376f8715a0cb2ae9d435265"
+    },
+    ".python-version": {
+      "checksum": "c0479ff484dacd51dc5ba0461b16b9bf"
+    },
+    "README.md": {
+      "checksum": "a970f122c207b5169cf6dc152156d9e8"
+    },
+    "app.py": {
+      "checksum": "c278553344d869312bd2f9151d85f6a8"
+    },
+    "nomad_wr/__init__.py": {
+      "checksum": "31888c0f9612316748bfe92e93f02f54"
+    },
+    "nomad_wr/charts.py": {
+      "checksum": "85cba849ae90c64283ef0befb2df2a37"
+    },
+    "nomad_wr/config.py": {
+      "checksum": "eb208b30576d5508a098eb454008231b"
+    },
+    "nomad_wr/data.py": {
+      "checksum": "19875f7f3a289bade9cc6e26a3988ca0"
+    },
+    "nomad_wr/logic.py": {
+      "checksum": "aa007663ea8363472ba01f8b22c7ae43"
+    },
+    "nomad_wr/pages/__init__.py": {
+      "checksum": "645649583d66700d1d7dd2c066d95f36"
+    },
+    "nomad_wr/pages/admin.py": {
+      "checksum": "e135abe2c24bcd4a9bc2307c7177bd48"
+    },
+    "nomad_wr/pages/athlete_profile.py": {
+      "checksum": "dcab41bc23d0dedbf092df8f87f35ad5"
+    },
+    "nomad_wr/pages/quick_entry.py": {
+      "checksum": "72213f048b3cb3f2e9009d1702fcc886"
+    },
+    "nomad_wr/pages/team_dashboard.py": {
+      "checksum": "a49ea3f59784d8093f6b9771935986d6"
+    },
+    "nomad_wr/storage.py": {
+      "checksum": "53bf69f7ae3d09a7d3f444e6810ad93a"
+    },
+    "nomad_wr/ui_helpers.py": {
+      "checksum": "f1e271b22c6555b1ac1dae6cd88651bc"
+    },
+    "seed_demo.py": {
+      "checksum": "e17db576a6424749f990b7d8c7229964"
+    },
+    "www/plotly.min.js": {
+      "checksum": "838b67770772711ae092ee81851f814f"
+    },
+    "www/styles.css": {
+      "checksum": "96f0f73df33d3a5f9fe079b58be6f61b"
+    }
+  }
+}
