@@ -333,7 +333,7 @@ NomadWRTracker/
 │     ├─ athlete_profile.py
 │     ├─ team_dashboard.py
 │     └─ admin.py
-├─ www/styles.css            # Nomad navy theme, mobile-first
+├─ www/styles.css            # "newsprint" theme, mobile-first
 ├─ data/                     # created on first run
 └─ tests/test_storage.py
 ```
@@ -341,6 +341,19 @@ NomadWRTracker/
 Charts use Plotly's JavaScript bundle, copied out of the installed `plotly`
 package into `www/` at startup rather than loaded from a CDN — so charts render
 on a gym network with no internet.
+
+### The theme
+
+White page, black chrome, hairline rules, no drop shadows, squared corners.
+One rule governs colour: **chrome is black and white, and colour is reserved for
+things whose meaning depends on it** — the four benchmark tiers, the gold PR
+treatment, and the green/red save feedback. If something on screen is coloured,
+it is telling you something. Everything else — nav, cards, type, buttons, trend
+lines, untiered leaderboard bars — is monochrome.
+
+That means a new coloured element should be a deliberate decision, not a default.
+`www/styles.css` keeps the two groups in separate blocks at the top (`/* chrome */`
+and `/* meaning */`) so it stays obvious which is which.
 
 ---
 

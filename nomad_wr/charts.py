@@ -21,18 +21,19 @@ from .config import TIERS, WWW_DIR
 
 log = logging.getLogger("nomad_wr.charts")
 
-NAVY = "#0B2545"
-NAVY_SOFT = "#1D3F6E"
-GOLD = "#D9A21B"
-GRID = "#DFE5EC"
-INK = "#0F172A"
-MUTED = "#5A6B7F"
+# Chrome is monochrome to match the newsprint theme; the only colour left in a
+# chart is the one carrying meaning — PR markers and benchmark tiers.
+INK = "#0A0A0A"
+INK_SOFT = "#3A3A3A"
+GRID = "#E8E8E8"
+MUTED = "#6B6B6B"
+GOLD = "#B8860B"
 
 TIER_COLORS = {
-    "Elite": "#C8951C",
+    "Elite": "#B8860B",
     "Advanced": "#1F6FB2",
-    "Average": "#64748B",
-    "Below Average": "#C0392B",
+    "Average": "#8A8A8A",
+    "Below Average": "#B3261E",
 }
 
 FONT_FAMILY = (
@@ -77,7 +78,7 @@ def _base_layout(fig: go.Figure, height: int) -> None:
         plot_bgcolor="#FFFFFF",
         dragmode=False,
         showlegend=False,
-        hoverlabel=dict(font_size=14, bgcolor=NAVY, font_color="#FFFFFF"),
+        hoverlabel=dict(font_size=14, bgcolor=INK, font_color="#FFFFFF"),
     )
     fig.update_xaxes(
         gridcolor=GRID, linecolor=GRID, zeroline=False, ticks="outside",
@@ -115,8 +116,8 @@ def trend_chart(df: pd.DataFrame, metric: dict[str, Any], height: int = 260) -> 
             x=marked["ts"],
             y=marked["value"],
             mode="lines+markers",
-            line=dict(color=NAVY, width=3, shape="linear"),
-            marker=dict(size=9, color=NAVY, line=dict(color="#FFFFFF", width=2)),
+            line=dict(color=INK, width=2.5, shape="linear"),
+            marker=dict(size=8, color=INK, line=dict(color="#FFFFFF", width=2)),
             hovertemplate="%{x|%b %d, %Y}<br><b>%{y}</b> " + unit + "<extra></extra>",
             name=str(metric.get("name", "")),
         )
@@ -166,7 +167,7 @@ def leaderboard_chart(board: pd.DataFrame, metric: dict[str, Any], top_n: int = 
     higher_is_better = bool(metric.get("higher_is_better", True))
     top = board.head(top_n).iloc[::-1]  # plotly draws the first row at the bottom
     has_tiers = top["tier"].notna().any()
-    colors = [TIER_COLORS.get(t, NAVY_SOFT) if has_tiers else NAVY for t in top["tier"]]
+    colors = [TIER_COLORS.get(t, INK_SOFT) if has_tiers else INK for t in top["tier"]]
     names = [f"{n}  " for n in top["name"]]
     labels = [logic.fmt_value(v, unit) for v in top["best"]]
     hover = "<b>%{y}</b><br>%{x} " + unit + "<extra></extra>"

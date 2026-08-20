@@ -29,9 +29,9 @@ charts.ensure_plotly_asset()
 
 FAVICON = (
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E"
-    "%3Crect width='32' height='32' rx='6' fill='%230B2545'/%3E"
+    "%3Crect width='32' height='32' rx='3' fill='%230A0A0A'/%3E"
     "%3Ctext x='16' y='23' font-size='19' font-family='Arial,sans-serif' font-weight='bold' "
-    "text-anchor='middle' fill='%23D9A21B'%3EN%3C/text%3E%3C/svg%3E"
+    "text-anchor='middle' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E"
 )
 
 
@@ -41,7 +41,7 @@ def _head() -> ui.TagChild:
             name="viewport",
             content="width=device-width, initial-scale=1, viewport-fit=cover",
         ),
-        ui.tags.meta(name="theme-color", content="#0B2545"),
+        ui.tags.meta(name="theme-color", content="#0A0A0A"),
         ui.tags.meta(name="mobile-web-app-capable", content="yes"),
         ui.tags.link(rel="icon", href=FAVICON),
         ui.tags.link(rel="stylesheet", href="assets/styles.css"),
