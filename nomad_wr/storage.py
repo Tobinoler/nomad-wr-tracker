@@ -645,6 +645,63 @@ def save_metric(
         raise StorageError(f"Could not save the metric: {exc}") from exc
 
 
+def count_entries_for_metric(metric_id: str) -> int:
+    """How many logged entries reference this metric. Read straight from disk."""
+    entries = load_entries()
+    if entries.empty:
+        return 0
+    return int((entries["metric_id"] == metric_id).sum())
+
+
+def delete_metric(metric_id: str) -> dict[str, Any]:
+    """Remove a metric from the catalogue, along with its benchmark cutoffs.
+
+    Entries already logged against it are deliberately left alone — the log
+    stays append-only, so nothing an athlete recorded is ever destroyed here.
+    They become orphans: visible on the athlete's profile as a missing metric,
+    absent everywhere else. Re-adding a metric with the same name regenerates
+    the same slug id and reattaches the whole history.
+    """
+    if not metric_id:
+        raise StorageError("Pick a metric to remove.")
+    try:
+        with data_lock():
+            metrics = load_metrics()
+            match = metrics[metrics["metric_id"] == metric_id]
+            if match.empty:
+                raise StorageError("That metric is no longer in the catalogue.")
+            name = str(match.iloc[0]["name"])
+            orphaned = count_entries_for_metric(metric_id)
+
+            _write_rows_atomic(
+                METRICS_CSV, METRIC_COLUMNS, _metric_rows(metrics[metrics["metric_id"] != metric_id])
+            )
+
+            benchmarks = load_benchmarks()
+            had_benchmark = (
+                not benchmarks.empty and bool((benchmarks["metric_id"] == metric_id).any())
+            )
+            if had_benchmark:
+                _write_rows_atomic(
+                    BENCHMARKS_CSV,
+                    BENCHMARK_COLUMNS,
+                    _benchmark_rows(benchmarks[benchmarks["metric_id"] != metric_id]),
+                )
+    except Timeout as exc:
+        raise _busy(exc) from exc
+    except OSError as exc:
+        raise StorageError(f"Could not remove the metric: {exc}") from exc
+
+    log.warning(
+        "Metric %s (%s) removed; %d entr%s left orphaned in entries.csv",
+        metric_id,
+        name,
+        orphaned,
+        "y" if orphaned == 1 else "ies",
+    )
+    return {"name": name, "orphaned": orphaned, "had_benchmark": had_benchmark}
+
+
 def _unique_metric_id(base: str, taken: set[str]) -> str:
     if base not in taken:
         return base

@@ -396,6 +396,54 @@ body {
   flex-wrap: wrap;
 }
 
+/* Quiet by default — destructive, but not shouting from across the page. */
+.btn-danger-soft {
+  background: var(--surface-2);
+  color: var(--error);
+  border: 1.5px solid #f0bdb5;
+}
+
+.btn-danger-soft:hover,
+.btn-danger-soft:focus {
+  background: var(--error-bg);
+  color: var(--error);
+  border-color: var(--error);
+}
+
+/* The one that actually does it, once the consequences are on screen. */
+.btn-danger {
+  background: var(--error);
+  color: #fff;
+  border: 0;
+}
+
+.btn-danger:hover,
+.btn-danger:focus {
+  background: #8c2416;
+  color: #fff;
+}
+
+.confirm-box {
+  background: var(--error-bg);
+  border: 1.5px solid #f0bdb5;
+  border-radius: 12px;
+  padding: 0.85rem;
+  margin: 0.8rem 0;
+}
+
+.confirm-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--error);
+  margin-bottom: 0.3rem;
+}
+
+.confirm-body {
+  font-size: 0.88rem;
+  color: var(--ink);
+  margin-bottom: 0.75rem;
+}
+
 /* ------------------------------------------------------------- self-signup */
 
 .add-me-row {

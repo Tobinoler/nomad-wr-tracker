@@ -16,7 +16,7 @@ flat CSVs you can open in Excel, edit by hand, and back up by copying a folder.
 | **Quick Entry** | Athletes, mid-session | Pick athlete → pick lift → see their last value and PR → type the number → Save. Beats their PR? Gold celebration banner. New athletes add themselves here. |
 | **Athlete** | Athlete or coach | Every metric they've logged: PR, latest, change since first entry, a trend chart per metric, and the full entry log with PRs flagged. |
 | **Team** | Coach | Leaderboard per metric across the active roster, filterable by class, with optional Elite/Advanced/Average/Below-Average tiers. |
-| **Admin** | Coach | Add/edit/deactivate athletes, add/edit metrics, set benchmark cutoffs. |
+| **Admin** | Coach | Add/edit/deactivate athletes, add/edit/remove metrics, set benchmark cutoffs. |
 
 ---
 
@@ -155,6 +155,16 @@ flying_10_sprint,Flying 10 Sprint,Speed,sec,false
 `true` for a squat or a vertical, `false` for a timed sprint. Categories are
 Strength / Jump / Speed / Power / Other; units are free text (lbs, in, cm, sec,
 mph, watts…).
+
+**Removing a metric** (Admin → Metrics → pick it → *Remove metric*) trims the
+seeded ten down to what your gym actually tracks. One nothing has been logged
+against goes immediately. One with history asks first, and tells you how many
+entries are at stake, because it never deletes them: `entries.csv` stays
+append-only, so those rows survive as orphans — off the leaderboards, still
+visible on the athlete's profile as a missing metric. Adding a metric back under
+the same name regenerates the same `metric_id`, which **reattaches the whole
+history**, so a removal you regret is undoable. Benchmark cutoffs for the metric
+are removed with it.
 
 **`entries.csv`** — the log, one row per number, append-only
 
@@ -339,7 +349,8 @@ on a gym network with no internet.
 - **No login.** Anyone on the network can log an entry, add themselves, or reach
   Admin and edit the roster and metrics. Fine for a kiosk on a private Wi-Fi;
   not fine on the open internet. (Posit Connect puts real auth in front of it.)
-- **No entry editing or deletion in the UI.** The log is append-only by design.
+- **No entry editing or deletion in the UI.** The log is append-only by design —
+  removing a metric doesn't delete its entries either, it orphans them.
   A fat-fingered value is flagged at save time ("that's far off their usual
   numbers") but still recorded. To fix one: stop the app and delete the row from
   `entries.csv`, or just log the correct value — leaderboards and PRs use each

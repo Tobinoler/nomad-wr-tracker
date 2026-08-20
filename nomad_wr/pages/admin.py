@@ -100,7 +100,14 @@ def admin_ui(athletes: pd.DataFrame, metrics: pd.DataFrame) -> TagList:
                     "It drives PR detection and tier colouring.",
                     class_="field-hint",
                 ),
-                ui.input_action_button("save_metric", "Save metric", class_="btn-admin"),
+                ui.tags.div(
+                    {"class": "btn-row"},
+                    ui.input_action_button("save_metric", "Save metric", class_="btn-admin"),
+                    ui.input_action_button(
+                        "remove_metric", "Remove metric", class_="btn-admin btn-danger-soft"
+                    ),
+                ),
+                ui.output_ui("remove_metric_confirm"),
                 ui.output_ui("metric_feedback"),
                 ui.output_ui("metric_table"),
             ),
@@ -147,6 +154,7 @@ def admin_server(input, output, session) -> None:
     athlete_msg: reactive.Value[tuple[str, str] | None] = reactive.value(None)
     metric_msg: reactive.Value[tuple[str, str] | None] = reactive.value(None)
     bench_msg: reactive.Value[tuple[str, str] | None] = reactive.value(None)
+    pending_remove: reactive.Value[str | None] = reactive.value(None)
 
     # ---- roster -----------------------------------------------------------
 
@@ -271,6 +279,9 @@ def admin_server(input, output, session) -> None:
     @reactive.effect
     @reactive.event(input.metric_pick)
     def _load_metric() -> None:
+        # Switching the selection abandons any half-finished removal, so the
+        # confirm box can never end up describing a different metric.
+        pending_remove.set(None)
         metric = logic.metric_map(storage.load_metrics()).get(input.metric_pick() or "")
         if metric is None:
             ui.update_text("metric_name", value="")
@@ -307,6 +318,93 @@ def admin_server(input, output, session) -> None:
             "metric_pick",
             choices=_metric_pick_choices(storage.load_metrics()),
             selected=metric_id,
+        )
+
+    # ---- removing a metric ------------------------------------------------
+    # A metric nothing has been logged against goes straight away; one with
+    # history asks first and says exactly what happens to that history.
+
+    @reactive.effect
+    @reactive.event(input.remove_metric)
+    def _remove_metric() -> None:
+        metric = logic.metric_map(storage.load_metrics()).get(input.metric_pick() or "")
+        if metric is None:
+            pending_remove.set(None)
+            metric_msg.set(("error", "Pick a metric from the list first."))
+            return
+        if storage.count_entries_for_metric(metric["metric_id"]) > 0:
+            metric_msg.set(None)
+            pending_remove.set(metric["metric_id"])
+            return
+        _do_remove(metric["metric_id"])
+
+    @reactive.effect
+    @reactive.event(input.confirm_remove)
+    def _confirm_remove() -> None:
+        metric_id = pending_remove()
+        if metric_id:
+            _do_remove(metric_id)
+
+    @reactive.effect
+    @reactive.event(input.cancel_remove)
+    def _cancel_remove() -> None:
+        pending_remove.set(None)
+
+    def _do_remove(metric_id: str) -> None:
+        try:
+            removed = storage.delete_metric(metric_id)
+        except storage.StorageError as exc:
+            pending_remove.set(None)
+            metric_msg.set(("error", str(exc)))
+            return
+        except Exception as exc:
+            log.exception("Metric removal failed")
+            pending_remove.set(None)
+            metric_msg.set(("error", f"Could not remove it: {exc}"))
+            return
+
+        pending_remove.set(None)
+        ui.update_select(
+            "metric_pick", choices=_metric_pick_choices(storage.load_metrics()), selected=NEW
+        )
+        note = f"Removed {removed['name']}."
+        if removed["orphaned"]:
+            plural = "entry" if removed["orphaned"] == 1 else "entries"
+            note += (
+                f" {removed['orphaned']} logged {plural} stayed in entries.csv — add a metric"
+                f" named “{removed['name']}” again to reattach them."
+            )
+        if removed["had_benchmark"]:
+            note += " Its benchmark cutoffs went with it."
+        metric_msg.set(("info" if removed["orphaned"] else "success", note))
+
+    @render.ui
+    def remove_metric_confirm() -> TagChild:
+        metric_id = pending_remove()
+        if not metric_id:
+            return None
+        metric = logic.metric_map(data.metrics()).get(metric_id)
+        if metric is None:
+            return None
+        count = storage.count_entries_for_metric(metric_id)
+        plural = "entry" if count == 1 else "entries"
+        return ui.tags.div(
+            {"class": "confirm-box"},
+            ui.tags.div(f"Remove {metric['name']}?", class_="confirm-title"),
+            ui.tags.div(
+                f"{count} {plural} already logged against it. Those rows stay in "
+                f"entries.csv — nothing an athlete recorded gets deleted — but they drop off "
+                f"the leaderboards and show as a missing metric on athlete profiles. "
+                f"Adding “{metric['name']}” back later reattaches them.",
+                class_="confirm-body",
+            ),
+            ui.tags.div(
+                {"class": "btn-row"},
+                ui.input_action_button(
+                    "confirm_remove", f"Yes, remove {metric['name']}", class_="btn-admin btn-danger"
+                ),
+                ui.input_action_button("cancel_remove", "Keep it", class_="btn-admin btn-quiet"),
+            ),
         )
 
     @render.ui

@@ -134,6 +134,67 @@ def test_benchmarks_round_trip_and_clear() -> None:
     assert "back_squat" not in logic.benchmark_map(storage.load_benchmarks())
 
 
+def test_removing_a_metric_keeps_the_entries_and_reattaches_them() -> None:
+    athlete_id = _an_athlete()
+    metric_id = storage.save_metric("Sled Push", "Speed", "sec", False)
+    storage.append_entry(athlete_id, metric_id, 6.4)
+    storage.append_entry(athlete_id, metric_id, 6.1)
+    storage.save_benchmark(metric_id, 5.5, 6.0, 6.5)
+    entries_before = len(storage.load_entries())
+
+    assert storage.count_entries_for_metric(metric_id) == 2
+    removed = storage.delete_metric(metric_id)
+    assert removed == {"name": "Sled Push", "orphaned": 2, "had_benchmark": True}
+
+    assert metric_id not in set(storage.load_metrics()["metric_id"]), "metric should be gone"
+    assert metric_id not in logic.benchmark_map(storage.load_benchmarks()), "cutoffs go with it"
+    # The append-only log is untouched: nothing an athlete recorded is destroyed.
+    assert len(storage.load_entries()) == entries_before
+    assert storage.count_entries_for_metric(metric_id) == 2
+
+    # Re-adding under the same name regenerates the same slug, so the orphaned
+    # history reattaches rather than being stranded forever.
+    readded = storage.save_metric("Sled Push", "Speed", "sec", False)
+    assert readded == metric_id
+    summary = logic.athlete_metric_summary(
+        storage.load_entries(), storage.load_metrics(), athlete_id
+    )
+    row = summary[summary["metric_id"] == metric_id].iloc[0]
+    assert bool(row["known_metric"]) is True and int(row["entries"]) == 2
+    assert row["pr_value"] == 6.1, "lower-is-better PR survived the round trip"
+
+
+def test_removing_an_unused_metric_is_clean() -> None:
+    metric_id = storage.save_metric("Sled Drag", "Speed", "sec", False)
+    assert storage.count_entries_for_metric(metric_id) == 0
+    removed = storage.delete_metric(metric_id)
+    assert removed == {"name": "Sled Drag", "orphaned": 0, "had_benchmark": False}
+    assert metric_id not in set(storage.load_metrics()["metric_id"])
+
+    for bad in ("", "no_such_metric"):
+        try:
+            storage.delete_metric(bad)
+        except storage.StorageError:
+            pass
+        else:
+            raise AssertionError(f"delete_metric({bad!r}) should have been refused")
+
+
+def test_orphaned_entries_stay_visible_on_the_profile() -> None:
+    athlete_id = _an_athlete()
+    metric_id = storage.save_metric("Ghost Lift", "Other", "lbs", True)
+    storage.append_entry(athlete_id, metric_id, 100)
+    storage.delete_metric(metric_id)
+
+    summary = logic.athlete_metric_summary(
+        storage.load_entries(), storage.load_metrics(), athlete_id
+    )
+    row = summary[summary["metric_id"] == metric_id].iloc[0]
+    assert bool(row["known_metric"]) is False
+    assert metric_id in row["metric_name"], "the coach should still see which metric it was"
+    assert int(row["entries"]) == 1
+
+
 def test_position_pairs_round_trip() -> None:
     assert join_position("RHP", "OF") == "RHP / OF"
     assert join_position("SS", "") == "SS"
