@@ -195,6 +195,35 @@ def test_orphaned_entries_stay_visible_on_the_profile() -> None:
     assert int(row["entries"]) == 1
 
 
+def test_reference_for_drives_quick_entry_and_group_boxes() -> None:
+    """last / PR / recent — the numbers a coach loads a bar from."""
+    athlete_id = storage.save_athlete("Reference Case", 2028, "C", True)
+    metric_id = storage.save_metric("Box Jump", "Jump", "in", True)
+
+    empty = logic.reference_for(storage.load_entries(), athlete_id, metric_id, True)
+    assert empty["count"] == 0 and empty["last_value"] is None and empty["pr_value"] is None
+
+    for day, value in ((1, 30), (2, 34), (3, 32)):
+        storage.append_entry(
+            athlete_id, metric_id, value, timestamp=f"2026-03-0{day}T17:00:00"
+        )
+
+    ref = logic.reference_for(storage.load_entries(), athlete_id, metric_id, True)
+    assert ref["count"] == 3
+    assert ref["last_value"] == 32.0, "last means most recent, not best"
+    assert ref["pr_value"] == 34.0, "PR means best, not most recent"
+    assert [v for v in ref["recent"]["value"]] == [32.0, 34.0, 30.0], "newest first"
+
+    # Same numbers, lower-is-better: the PR flips, the last value does not.
+    sprint_id = storage.save_metric("Shuttle", "Speed", "sec", False)
+    for day, value in ((1, 4.9), (2, 4.6), (3, 4.8)):
+        storage.append_entry(
+            athlete_id, sprint_id, value, timestamp=f"2026-03-0{day}T17:00:00"
+        )
+    sprint = logic.reference_for(storage.load_entries(), athlete_id, sprint_id, False)
+    assert sprint["last_value"] == 4.8 and sprint["pr_value"] == 4.6
+
+
 def test_position_pairs_round_trip() -> None:
     assert join_position("RHP", "OF") == "RHP / OF"
     assert join_position("SS", "") == "SS"

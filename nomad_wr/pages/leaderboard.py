@@ -1,4 +1,4 @@
-"""Team Dashboard — leaderboards per metric, with optional benchmark tiers."""
+"""Leaderboard — best-per-athlete rankings for one metric, with optional tiers."""
 
 from __future__ import annotations
 
@@ -31,9 +31,9 @@ def _grad_choices(athletes: pd.DataFrame) -> dict[str, str]:
 
 
 @module.ui
-def team_dashboard_ui(athletes: pd.DataFrame, metrics: pd.DataFrame) -> TagList:
+def leaderboard_ui(athletes: pd.DataFrame, metrics: pd.DataFrame) -> TagList:
     return TagList(
-        page_heading("Team Dashboard", "Who's moving the needle."),
+        page_heading("Leaderboard", "Who's moving the needle."),
         ui.tags.div(
             {"class": "panel panel-flush"},
             ui.tags.div(
@@ -59,7 +59,7 @@ def team_dashboard_ui(athletes: pd.DataFrame, metrics: pd.DataFrame) -> TagList:
 
 
 @module.server
-def team_dashboard_server(input, output, session) -> None:
+def leaderboard_server(input, output, session) -> None:
     @reactive.effect
     def _sync_metrics() -> None:
         metrics = data.metrics()

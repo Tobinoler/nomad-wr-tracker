@@ -15,7 +15,8 @@ flat CSVs you can open in Excel, edit by hand, and back up by copying a folder.
 | --- | --- | --- |
 | **Quick Entry** | Athletes, mid-session | Pick athlete → pick lift → see their last value and PR → type the number → Save. Beats their PR? Gold celebration banner. New athletes add themselves here. |
 | **Athlete** | Athlete or coach | Every metric they've logged: PR, latest, change since first entry, a trend chart per metric, and the full entry log with PRs flagged. |
-| **Team** | Coach | Leaderboard per metric across the active roster, filterable by class, with optional Elite/Advanced/Average/Below-Average tiers. |
+| **Leaderboard** | Coach | Ranking per metric across the active roster, filterable by class, with optional Elite/Advanced/Average/Below-Average tiers. |
+| **Group** | Coach, mid-session | Eight numbered slots. Assign the athletes training together, switch on the lifts being trained, and every athlete's last value and PR is on one screen — so you know what belongs on each bar. |
 | **Admin** | Coach | Add/edit/deactivate athletes, add/edit/remove metrics, set benchmark cutoffs. |
 
 ---
@@ -41,6 +42,19 @@ On first run the app creates `data/` and seeds `metrics.csv` with the 10 metrics
 below. **The roster starts empty** — `athletes.csv`, `entries.csv` and
 `benchmarks.csv` contain nothing but headers, because the app never invents
 athletes, results or standards.
+
+### Running a session from the Group page
+
+Set the group up once at the start of a session: pick an athlete into each
+numbered slot (the numbers are yours to map onto racks or stations), then switch
+on the lifts being trained. Each box then shows, per lift, the athlete's **last
+value** in a heavy frame, their **PR** beside it in gold, and the last five
+entries underneath. The last value leads because that's the number you load from;
+the PR is context, not a target for a Tuesday.
+
+Slots hold up to eight athletes and stay put while you switch lifts on and off,
+so one setup covers a whole session. The group lives in the browser session
+though — reloading the page clears it, and nothing is written to disk.
 
 ### Adding athletes
 
@@ -331,7 +345,8 @@ NomadWRTracker/
 │  └─ pages/                 # one Shiny module per page
 │     ├─ quick_entry.py
 │     ├─ athlete_profile.py
-│     ├─ team_dashboard.py
+│     ├─ leaderboard.py
+│     ├─ group.py
 │     └─ admin.py
 ├─ www/styles.css            # "newsprint" theme, mobile-first
 ├─ data/                     # created on first run

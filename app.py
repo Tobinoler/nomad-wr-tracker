@@ -15,7 +15,7 @@ from starlette.requests import Request
 
 from nomad_wr import charts, storage
 from nomad_wr.config import APP_NAME, ORG_NAME, WWW_DIR
-from nomad_wr.pages import admin, athlete_profile, quick_entry, team_dashboard
+from nomad_wr.pages import admin, athlete_profile, group, leaderboard, quick_entry
 
 logging.basicConfig(
     level=logging.INFO,
@@ -58,7 +58,8 @@ def app_ui(request: Request) -> ui.Tag:
     return ui.page_navbar(
         ui.nav_panel("Quick Entry", quick_entry.quick_entry_ui("quick", athletes, metrics)),
         ui.nav_panel("Athlete", athlete_profile.athlete_profile_ui("profile", athletes)),
-        ui.nav_panel("Team", team_dashboard.team_dashboard_ui("team", athletes, metrics)),
+        ui.nav_panel("Leaderboard", leaderboard.leaderboard_ui("board", athletes, metrics)),
+        ui.nav_panel("Group", group.group_ui("group", athletes, metrics)),
         ui.nav_panel("Admin", admin.admin_ui("admin", athletes, metrics)),
         _head(),
         title=ui.tags.span(
@@ -75,7 +76,8 @@ def app_ui(request: Request) -> ui.Tag:
 def server(input, output, session) -> None:
     quick_entry.quick_entry_server("quick")
     athlete_profile.athlete_profile_server("profile")
-    team_dashboard.team_dashboard_server("team")
+    leaderboard.leaderboard_server("board")
+    group.group_server("group")
     admin.admin_server("admin")
 
 

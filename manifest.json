@@ -32,16 +32,16 @@
       "checksum": "c0479ff484dacd51dc5ba0461b16b9bf"
     },
     "README.md": {
-      "checksum": "260bf45fdac72986b488ed6ca7920a97"
+      "checksum": "3b41c1d82ed53e711bfc69f83a5c254c"
     },
     "app.py": {
-      "checksum": "c278553344d869312bd2f9151d85f6a8"
+      "checksum": "5f3359313f03788a9d7b9fb58835060d"
     },
     "nomad_wr/__init__.py": {
       "checksum": "31888c0f9612316748bfe92e93f02f54"
     },
     "nomad_wr/charts.py": {
-      "checksum": "85cba849ae90c64283ef0befb2df2a37"
+      "checksum": "10268d4e53e8aeecbed45500f7054082"
     },
     "nomad_wr/config.py": {
       "checksum": "eb208b30576d5508a098eb454008231b"
@@ -53,22 +53,25 @@
       "checksum": "37fc96cdbc433be17d41732385560f5d"
     },
     "nomad_wr/pages/__init__.py": {
-      "checksum": "645649583d66700d1d7dd2c066d95f36"
+      "checksum": "05b36e4b67966f4b87eb35db77953e70"
     },
     "nomad_wr/pages/admin.py": {
-      "checksum": "7cb06983f720ccf36db2b3ad932d9644"
+      "checksum": "5b506596fdefd5d12b46624a2c7d9d6a"
     },
     "nomad_wr/pages/athlete_profile.py": {
       "checksum": "dcab41bc23d0dedbf092df8f87f35ad5"
     },
+    "nomad_wr/pages/group.py": {
+      "checksum": "5292dba4119c02da1c5b9086f839332b"
+    },
+    "nomad_wr/pages/leaderboard.py": {
+      "checksum": "e50ee61d9f770b115bc36ae930914b77"
+    },
     "nomad_wr/pages/quick_entry.py": {
       "checksum": "3221750c1e275de99d724e407e6c6389"
     },
-    "nomad_wr/pages/team_dashboard.py": {
-      "checksum": "a49ea3f59784d8093f6b9771935986d6"
-    },
     "nomad_wr/storage.py": {
-      "checksum": "98a5232af3feb5c244a8805091c2def2"
+      "checksum": "678f72a7e18599c926cb659e8f05a09d"
     },
     "nomad_wr/ui_helpers.py": {
       "checksum": "f1e271b22c6555b1ac1dae6cd88651bc"
@@ -80,7 +83,7 @@
       "checksum": "838b67770772711ae092ee81851f814f"
     },
     "www/styles.css": {
-      "checksum": "61d1e8a88e4bcea9865fd75fc6597856"
+      "checksum": "de4870a192e674e4be5b9cf6d23cca6b"
     }
   }
 }
